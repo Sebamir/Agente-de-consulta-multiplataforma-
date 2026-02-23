@@ -1,0 +1,18 @@
+# Cliente y servidor MCP (Model Context Protocol)
+mcp>=1.0.0
+
+# Driver PostgreSQL
+psycopg2-binary>=2.9.0
+
+# Anthropic SDK — llamadas directas a la API de Claude
+anthropic>=0.40.0
+
+# Variables de entorno
+python-dotenv>=1.0.0
+
+# Colores y formato en CLI
+rich>=13.0.0
+
+# Google Sheets API (Fase 3)
+google-api-python-client>=2.0.0
+google-auth>=2.0.0

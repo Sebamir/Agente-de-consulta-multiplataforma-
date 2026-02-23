@@ -1,0 +1,31 @@
+# Variables de entorno (NUNCA commitear)
+.env
+
+# Credenciales Google
+credentials/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Node (para MCPs instalados localmente)
+node_modules/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# claude
+.claude
