@@ -1,5 +1,7 @@
 import asyncio
+import json
 from contextlib import AsyncExitStack
+from typing import AsyncGenerator
 
 import anthropic
 from mcp import ClientSession, StdioServerParameters
@@ -122,6 +124,72 @@ class MCPAgent:
             break
 
         return _extract_text(response.content) or "El agente no devolvió una respuesta."
+
+    async def stream_query(self, user_prompt: str) -> AsyncGenerator[dict, None]:
+        """
+        Versión streaming del loop agentivo para la interfaz web.
+
+        Yields dicts con los siguientes tipos de evento:
+          {"type": "text",        "content": "..."}      — token de texto de Claude
+          {"type": "tool_call",   "tool": "...", "input": {...}}  — antes de ejecutar tool
+          {"type": "tool_result", "tool": "...", "result": "..."} — resultado de la tool
+          {"type": "done"}                                — fin de la respuesta
+          {"type": "error",       "message": "..."}       — error en cualquier punto
+        """
+        api_tools = [
+            {
+                "name": t["name"],
+                "description": t["description"],
+                "input_schema": t["input_schema"],
+            }
+            for t in self._tools
+        ]
+
+        self._history.append({"role": "user", "content": user_prompt})
+
+        for _ in range(MAX_TURNS):
+            tool_results = []
+
+            async with self._client.messages.stream(
+                model="claude-opus-4-6",
+                max_tokens=8096,
+                system=SYSTEM_PROMPT,
+                tools=api_tools,
+                messages=self._history,
+            ) as stream:
+                async for text in stream.text_stream:
+                    yield {"type": "text", "content": text}
+                message = await stream.get_final_message()
+
+            self._history.append({"role": "assistant", "content": message.content})
+
+            if message.stop_reason == "end_turn":
+                yield {"type": "done"}
+                return
+
+            if message.stop_reason == "tool_use":
+                for block in message.content:
+                    if block.type != "tool_use":
+                        continue
+
+                    yield {"type": "tool_call", "tool": block.name, "input": block.input}
+                    result = await self._call_tool(block.name, block.input)
+                    yield {"type": "tool_result", "tool": block.name, "result": result}
+
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": result,
+                    })
+
+                self._history.append({"role": "user", "content": tool_results})
+                continue
+
+            # stop_reason inesperado
+            yield {"type": "done"}
+            return
+
+        yield {"type": "error", "message": "Se alcanzó el límite máximo de turnos."}
 
     def clear_history(self):
         """Borra el historial de la conversación (para el comando /limpiar)."""

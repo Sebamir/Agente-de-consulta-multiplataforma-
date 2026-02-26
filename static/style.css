@@ -1,0 +1,77 @@
+/* ── Reset & base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0f1117;
+  --surface:   #1a1d2e;
+  --border:    #2a2d3e;
+  --accent:    #4f8ef7;
+  --yellow:    #f5c842;
+  --yellow-bg: #2a2510;
+  --green:     #4caf7d;
+  --red:       #e05c5c;
+  --text:      #e2e8f0;
+  --muted:     #6b7280;
+  --font-mono: "Cascadia Code", "Fira Code", "Consolas", monospace;
+  --radius:    10px;
+}
+
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; font-size: 15px; line-height: 1.6; }
+
+/* ── Layout ───────────────────────────────────────────────────────────────── */
+.layout { display: flex; flex-direction: column; height: 100vh; max-width: 860px; margin: 0 auto; }
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+.header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.header-title { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 16px; }
+.header-icon { color: var(--accent); font-size: 20px; }
+.header-sub { color: var(--muted); font-size: 13px; font-weight: 400; }
+.btn-clear { background: none; border: 1px solid var(--border); color: var(--muted); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all .15s; }
+.btn-clear:hover { border-color: var(--red); color: var(--red); }
+
+/* ── Messages ─────────────────────────────────────────────────────────────── */
+.messages { flex: 1; overflow-y: auto; padding: 24px 20px; display: flex; flex-direction: column; gap: 16px; scroll-behavior: smooth; }
+
+.message { display: flex; }
+.message.user { justify-content: flex-end; }
+.message.assistant { justify-content: flex-start; }
+
+.bubble { max-width: 78%; padding: 12px 16px; border-radius: var(--radius); line-height: 1.65; word-break: break-word; white-space: pre-wrap; }
+.message.user .bubble { background: var(--accent); color: #fff; border-bottom-right-radius: 3px; }
+.message.assistant .bubble { background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 3px; }
+.message.assistant .bubble.streaming::after { content: "▋"; animation: blink .7s step-end infinite; color: var(--accent); margin-left: 2px; }
+
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+/* Markdown-like dentro del bubble */
+.bubble strong { color: #fff; }
+.bubble code { font-family: var(--font-mono); background: rgba(255,255,255,.08); padding: 1px 5px; border-radius: 4px; font-size: .88em; }
+
+/* ── Tool call accordion ──────────────────────────────────────────────────── */
+.tool-block { margin-top: 10px; border: 1px solid var(--yellow); border-radius: var(--radius); overflow: hidden; font-size: 13px; }
+.tool-header { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--yellow-bg); color: var(--yellow); cursor: pointer; user-select: none; font-weight: 600; }
+.tool-header .tool-chevron { margin-left: auto; transition: transform .2s; }
+.tool-block.open .tool-chevron { transform: rotate(90deg); }
+.tool-body { display: none; padding: 10px 12px; background: #1e1c10; border-top: 1px solid var(--yellow); }
+.tool-block.open .tool-body { display: block; }
+.tool-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+.tool-code { font-family: var(--font-mono); white-space: pre-wrap; color: #e2c97e; font-size: 12.5px; }
+.tool-result-code { font-family: var(--font-mono); white-space: pre-wrap; color: #9db8a0; font-size: 12px; margin-top: 8px; }
+
+/* ── Input area ───────────────────────────────────────────────────────────── */
+.input-area { display: flex; align-items: flex-end; gap: 10px; padding: 16px 20px; background: var(--surface); border-top: 1px solid var(--border); flex-shrink: 0; }
+.input { flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px 14px; border-radius: var(--radius); font-size: 15px; resize: none; max-height: 160px; outline: none; font-family: inherit; line-height: 1.5; transition: border-color .15s; }
+.input:focus { border-color: var(--accent); }
+.input::placeholder { color: var(--muted); }
+.btn-send { flex-shrink: 0; width: 40px; height: 40px; background: var(--accent); border: none; border-radius: var(--radius); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity .15s; }
+.btn-send:hover { opacity: .85; }
+.btn-send svg { width: 18px; height: 18px; stroke: #fff; }
+.btn-send:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Error bubble ─────────────────────────────────────────────────────────── */
+.message.error .bubble { background: rgba(224,92,92,.12); border: 1px solid var(--red); color: var(--red); }
+
+/* ── Scrollbar ────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }

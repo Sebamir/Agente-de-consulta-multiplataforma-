@@ -18,7 +18,8 @@ Agente de IA conversacional que se conecta a **PostgreSQL** y **Google Sheets** 
 - **MCP:** `mcp` Python client — servidores propios en Python
   - PostgreSQL → `src/pg_server.py` (lectura + escritura)
   - Google Sheets → `src/sheets_server.py` (lectura + escritura + descubrimiento)
-- **API:** `anthropic` Python SDK — loop agentivo directo
+- **API:** `anthropic` Python SDK — loop agentivo directo con streaming
+- **Web:** FastAPI + uvicorn + SSE — interfaz web multi-usuario
 - **Lenguaje:** Python 3.11+
 - **CLI:** `rich` para formato y colores
 
@@ -61,7 +62,25 @@ Si no se configura, el agente arranca igual pero solo con acceso a PostgreSQL.
    GOOGLE_CREDENTIALS_PATH=./credentials/google-service-account.json
    ```
 
-## Uso
+## Modos de uso
+
+### Interfaz web (multi-usuario, con streaming)
+
+```bash
+python main.py --web
+# Abrir http://localhost:8000
+```
+
+- Respuestas en tiempo real token a token
+- Acordeón amarillo que muestra cada herramienta ejecutada (SQL, inputs, resultados)
+- Sesión persistente por browser vía `localStorage`
+- Botón "Nueva sesión" para limpiar el historial
+
+### CLI interactiva (un usuario)
+
+```bash
+python main.py
+```
 
 ```
 ╔══════════════════════════════════════════╗
@@ -90,13 +109,19 @@ Consulta: Leé el rango A1:D20 del sheet "Presupuesto"
 ```
 agente-de-consulta/
 ├── src/
-│   ├── agent.py          # MCPAgent — loop agentivo y gestión de herramientas
+│   ├── agent.py          # MCPAgent — loop agentivo, run_query, stream_query
 │   ├── cli.py            # Interfaz de usuario (Rich CLI)
 │   ├── config.py         # Configuración: MCPs, system prompt, env vars
 │   ├── pg_server.py      # Servidor MCP PostgreSQL (query + execute)
-│   └── sheets_server.py  # Servidor MCP Google Sheets (5 herramientas)
+│   ├── sheets_server.py  # Servidor MCP Google Sheets (5 herramientas)
+│   └── web.py            # API FastAPI + sesiones + endpoints SSE
+├── static/
+│   ├── index.html        # Interfaz web de chat
+│   ├── app.js            # Cliente SSE, streaming, rendering
+│   └── style.css         # Estilos del chat
 ├── credentials/          # Credenciales Google (no commitear)
-├── main.py               # Punto de entrada
+├── main.py               # Punto de entrada — CLI o --web
+├── test_concurrency.py   # Test de sesiones simultáneas
 ├── .env                  # Variables de entorno (no commitear)
 ├── .env.example          # Plantilla de variables
 ├── .gitignore
@@ -142,11 +167,13 @@ GOOGLE_CREDENTIALS_PATH=./credentials/google-service-account.json  # opcional
 - [ ] Resúmenes automáticos con extended thinking
 - [ ] Soporte para múltiples bases de datos simultáneas
 
-### Fase 5 — Interfaz web (opcional)
-- [ ] API REST con FastAPI
-- [ ] Frontend web con historial de conversaciones
+### Fase 5 — Interfaz web ✅
+- [x] API FastAPI con endpoints SSE para streaming
+- [x] Frontend HTML/JS servido por FastAPI (sin build step)
+- [x] Sesiones independientes por usuario (pool de MCPAgents)
+- [x] Streaming token a token con acordeón de tool calls
 - [ ] Autenticación de usuarios
-- [ ] Panel de administración de conexiones
+- [ ] Panel de administración de conexiones / sesiones activas
 
 ---
 

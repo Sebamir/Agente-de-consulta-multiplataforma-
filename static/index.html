@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agente de Consulta</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="layout">
+
+    <header class="header">
+      <div class="header-title">
+        <span class="header-icon">⬡</span>
+        <span>Agente de Consulta</span>
+        <span class="header-sub">PostgreSQL + Google Sheets</span>
+      </div>
+      <button class="btn-clear" id="btn-clear" title="Nueva conversación">
+        ✕ Nueva sesión
+      </button>
+    </header>
+
+    <main class="messages" id="messages">
+      <div class="message assistant">
+        <div class="bubble">
+          Hola, soy tu agente de datos. Podés preguntarme sobre tus tablas de PostgreSQL
+          o tus Google Sheets en lenguaje natural.<br><br>
+          <strong>Ejemplos:</strong><br>
+          • Listá todas las tablas disponibles<br>
+          • Mostrá los últimos 10 registros de [tabla]<br>
+          • ¿Qué spreadsheets tengo disponibles?<br>
+          • Resumí las ventas por categoría
+        </div>
+      </div>
+    </main>
+
+    <footer class="input-area">
+      <textarea
+        id="input"
+        class="input"
+        placeholder="Escribí tu consulta..."
+        rows="1"
+        autofocus
+      ></textarea>
+      <button class="btn-send" id="btn-send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </footer>
+
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
