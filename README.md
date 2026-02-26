@@ -19,7 +19,8 @@ Agente de IA conversacional que se conecta a **PostgreSQL** y **Google Sheets** 
   - PostgreSQL → `src/pg_server.py` (lectura + escritura)
   - Google Sheets → `src/sheets_server.py` (lectura + escritura + descubrimiento)
 - **API:** `anthropic` Python SDK — loop agentivo directo con streaming
-- **Web:** FastAPI + uvicorn + SSE — interfaz web multi-usuario
+- **Web:** FastAPI + uvicorn + SSE — interfaz web multi-usuario con autenticación JWT
+- **Auth:** JWT (`PyJWT`) — usuarios definidos en `.env`, tokens con expiración
 - **Lenguaje:** Python 3.11+
 - **CLI:** `rich` para formato y colores
 
@@ -42,7 +43,7 @@ pip install -r requirements.txt
 
 # 4. Configurar variables de entorno
 cp .env.example .env
-# Editar .env con ANTHROPIC_API_KEY, DATABASE_URL
+# Editar .env con ANTHROPIC_API_KEY, DATABASE_URL, WEB_USERS, JWT_SECRET
 # y opcionalmente GOOGLE_CREDENTIALS_PATH
 
 # 5. Ejecutar
@@ -64,17 +65,20 @@ Si no se configura, el agente arranca igual pero solo con acceso a PostgreSQL.
 
 ## Modos de uso
 
-### Interfaz web (multi-usuario, con streaming)
+### Interfaz web (multi-usuario, con autenticación y streaming)
 
 ```bash
 python main.py --web
 # Abrir http://localhost:8000
 ```
 
+- Login con usuario y contraseña (definidos en `WEB_USERS` del `.env`)
+- Cada usuario tiene su propia sesión aislada
+- Historial de conversación persistente (sobrevive reinicios del servidor)
 - Respuestas en tiempo real token a token
 - Acordeón amarillo que muestra cada herramienta ejecutada (SQL, inputs, resultados)
-- Sesión persistente por browser vía `localStorage`
 - Botón "Nueva sesión" para limpiar el historial
+- Botón "Cerrar sesión" para hacer logout
 
 ### CLI interactiva (un usuario)
 
@@ -110,15 +114,20 @@ Consulta: Leé el rango A1:D20 del sheet "Presupuesto"
 agente-de-consulta/
 ├── src/
 │   ├── agent.py          # MCPAgent — loop agentivo, run_query, stream_query
+│   ├── auth.py           # Autenticación JWT — usuarios, tokens, verificación
 │   ├── cli.py            # Interfaz de usuario (Rich CLI)
 │   ├── config.py         # Configuración: MCPs, system prompt, env vars
 │   ├── pg_server.py      # Servidor MCP PostgreSQL (query + execute)
 │   ├── sheets_server.py  # Servidor MCP Google Sheets (5 herramientas)
-│   └── web.py            # API FastAPI + sesiones + endpoints SSE
+│   └── web.py            # API FastAPI + auth + sesiones + endpoints SSE
 ├── static/
 │   ├── index.html        # Interfaz web de chat
-│   ├── app.js            # Cliente SSE, streaming, rendering
-│   └── style.css         # Estilos del chat
+│   ├── login.html        # Página de login
+│   ├── app.js            # Cliente SSE, streaming, rendering, auth
+│   └── style.css         # Estilos del chat y login
+├── sessions/             # Historiales por usuario (generado en runtime, no commitear)
+│   └── {username}/
+│       └── history.json
 ├── credentials/          # Credenciales Google (no commitear)
 ├── main.py               # Punto de entrada — CLI o --web
 ├── test_concurrency.py   # Test de sesiones simultáneas
@@ -137,7 +146,18 @@ Copiá `.env.example` como `.env` y completá los valores:
 ```env
 ANTHROPIC_API_KEY=sk-ant-...
 DATABASE_URL=postgresql://usuario:contraseña@localhost:5432/nombre_db
-GOOGLE_CREDENTIALS_PATH=./credentials/google-service-account.json  # opcional
+
+# Autenticación web
+WEB_USERS=admin:mi-contraseña,usuario2:otra-clave
+JWT_SECRET=clave-aleatoria-de-al-menos-32-caracteres
+
+# Google Sheets (opcional)
+GOOGLE_CREDENTIALS_PATH=./credentials/google-service-account.json
+```
+
+Para generar un `JWT_SECRET` seguro:
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
 ---
@@ -172,7 +192,8 @@ GOOGLE_CREDENTIALS_PATH=./credentials/google-service-account.json  # opcional
 - [x] Frontend HTML/JS servido por FastAPI (sin build step)
 - [x] Sesiones independientes por usuario (pool de MCPAgents)
 - [x] Streaming token a token con acordeón de tool calls
-- [ ] Autenticación de usuarios
+- [x] Autenticación JWT con usuarios definidos en `.env`
+- [x] Historial persistente por usuario (sobrevive reinicios)
 - [ ] Panel de administración de conexiones / sesiones activas
 
 ---
