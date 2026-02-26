@@ -20,3 +20,6 @@ google-auth>=2.0.0
 # Interfaz web (Fase 5)
 fastapi>=0.104.0
 uvicorn>=0.24.0
+
+# Autenticación JWT (Fase 5 — auth)
+PyJWT>=2.8.0

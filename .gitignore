@@ -1,6 +1,9 @@
 # Variables de entorno (NUNCA commitear)
 .env
 
+# Historiales de sesiones de usuario (generados en runtime)
+sessions/
+
 # Credenciales Google
 credentials/
 

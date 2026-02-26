@@ -15,9 +15,15 @@
         <span>Agente de Consulta</span>
         <span class="header-sub">PostgreSQL + Google Sheets</span>
       </div>
-      <button class="btn-clear" id="btn-clear" title="Nueva conversación">
-        ✕ Nueva sesión
-      </button>
+      <div class="header-actions">
+        <span id="auth-user" class="header-sub header-user"></span>
+        <button class="btn-clear" id="btn-clear" title="Nueva conversación">
+          ✕ Nueva sesión
+        </button>
+        <button class="btn-clear btn-logout" id="btn-logout" title="Cerrar sesión">
+          Cerrar sesión
+        </button>
+      </div>
     </header>
 
     <main class="messages" id="messages">

@@ -1,20 +1,24 @@
-/* ── Sesión ───────────────────────────────────────────────────────────────── */
-function getSessionId() {
-  let id = localStorage.getItem("agent_session_id");
-  if (!id) {
-    id = "sess_" + Math.random().toString(36).slice(2, 11);
-    localStorage.setItem("agent_session_id", id);
-  }
-  return id;
-}
+/* ── Autenticación ─────────────────────────────────────────────────────────── */
+const AUTH_TOKEN    = localStorage.getItem("auth_token");
+const AUTH_USERNAME = localStorage.getItem("auth_username") || "";
 
-let SESSION_ID = getSessionId();
+// Si no hay token, redirigir al login inmediatamente
+if (!AUTH_TOKEN) {
+  window.location.replace("/login");
+}
 
 /* ── DOM ──────────────────────────────────────────────────────────────────── */
 const messagesEl = document.getElementById("messages");
 const inputEl    = document.getElementById("input");
 const sendBtn    = document.getElementById("btn-send");
 const clearBtn   = document.getElementById("btn-clear");
+const logoutBtn  = document.getElementById("btn-logout");
+const authUserEl = document.getElementById("auth-user");
+
+// Mostrar nombre de usuario en el header
+if (authUserEl && AUTH_USERNAME) {
+  authUserEl.textContent = AUTH_USERNAME;
+}
 
 /* ── Auto-resize del textarea ─────────────────────────────────────────────── */
 inputEl.addEventListener("input", () => {
@@ -32,8 +36,19 @@ inputEl.addEventListener("keydown", (e) => {
 
 sendBtn.addEventListener("click", sendMessage);
 
+/* ── Logout ───────────────────────────────────────────────────────────────── */
+logoutBtn.addEventListener("click", () => {
+  localStorage.removeItem("auth_token");
+  localStorage.removeItem("auth_username");
+  window.location.replace("/login");
+});
+
+/* ── Nueva sesión ─────────────────────────────────────────────────────────── */
 clearBtn.addEventListener("click", async () => {
-  await fetch(`/api/session/${SESSION_ID}/clear`, { method: "POST" });
+  await fetch("/api/session/clear", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${AUTH_TOKEN}` },
+  });
   messagesEl.innerHTML = "";
   appendAssistantWelcome();
 });
@@ -112,9 +127,20 @@ async function sendMessage() {
   try {
     const response = await fetch("/api/query", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session_id: SESSION_ID, prompt }),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${AUTH_TOKEN}`,
+      },
+      body: JSON.stringify({ prompt }),
     });
+
+    // Token expirado o inválido → redirigir al login
+    if (response.status === 401) {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_username");
+      window.location.replace("/login");
+      return;
+    }
 
     if (!response.ok) {
       throw new Error(`Error del servidor: ${response.status}`);
@@ -143,8 +169,6 @@ async function sendMessage() {
         if (event.type === "text") {
           textContent += event.content;
           bubble.textContent = textContent;
-          bubble.appendChild; // fuerza re-render
-          // Re-agregar tool blocks si los hay (textContent los borra)
           scrollToBottom();
         }
 
@@ -155,7 +179,6 @@ async function sendMessage() {
         if (event.type === "tool_result" && currentToolBlock) {
           const resultEl = currentToolBlock.querySelector(".tool-result");
           const codeEl   = currentToolBlock.querySelector(".tool-result-code");
-          // Truncar resultados muy largos
           const text = event.result || "(sin resultado)";
           codeEl.textContent = text.length > 600 ? text.slice(0, 600) + "\n… (truncado)" : text;
           resultEl.style.display = "block";

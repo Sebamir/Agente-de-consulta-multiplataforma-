@@ -93,7 +93,8 @@ class MCPAgent:
             )
 
             # Agregar la respuesta del asistente al historial persistente
-            self._history.append({"role": "assistant", "content": response.content})
+            # (model_dump convierte SDK objects a dicts JSON-serializables)
+            self._history.append({"role": "assistant", "content": [_serialize_block(b) for b in response.content]})
 
             # Si Claude terminó de razonar, devolver el texto
             if response.stop_reason == "end_turn":
@@ -161,7 +162,7 @@ class MCPAgent:
                     yield {"type": "text", "content": text}
                 message = await stream.get_final_message()
 
-            self._history.append({"role": "assistant", "content": message.content})
+            self._history.append({"role": "assistant", "content": [_serialize_block(b) for b in message.content]})
 
             if message.stop_reason == "end_turn":
                 yield {"type": "done"}
@@ -190,6 +191,10 @@ class MCPAgent:
             return
 
         yield {"type": "error", "message": "Se alcanzó el límite máximo de turnos."}
+
+    def load_history(self, history: list):
+        """Carga historial desde formato JSON (dicts compatibles con la API de Anthropic)."""
+        self._history = history
 
     def clear_history(self):
         """Borra el historial de la conversación (para el comando /limpiar)."""
@@ -222,6 +227,19 @@ class MCPAgent:
     async def cleanup(self):
         """Cierra todas las sesiones MCP y libera recursos."""
         await self._exit_stack.aclose()
+
+
+def _serialize_block(block) -> dict:
+    """
+    Serializa un bloque de contenido a dict compatible con la API.
+    Evita campos internos del SDK (ej: parsed_output) que la API rechaza.
+    """
+    if block.type == "text":
+        return {"type": "text", "text": block.text}
+    if block.type == "tool_use":
+        return {"type": "tool_use", "id": block.id, "name": block.name, "input": block.input}
+    # Fallback para otros tipos (thinking, etc.)
+    return {"type": block.type}
 
 
 def _extract_text(content) -> str:

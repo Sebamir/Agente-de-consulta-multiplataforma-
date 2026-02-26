@@ -75,3 +75,98 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── Header actions (usuario + botones) ───────────────────────────────────── */
+.header-actions { display: flex; align-items: center; gap: 8px; }
+.header-user { margin-right: 4px; }
+.btn-logout { border-color: var(--border); color: var(--muted); }
+.btn-logout:hover { border-color: var(--muted); color: var(--text); }
+
+/* ── Login page ───────────────────────────────────────────────────────────── */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--bg);
+  padding: 24px;
+}
+
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 44px 40px 40px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.login-logo {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.login-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 10px 0 4px;
+}
+
+.login-sub {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.login-field {
+  margin-bottom: 16px;
+}
+
+.login-label {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 6px;
+}
+
+.login-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  font-size: 15px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color .15s;
+}
+
+.login-input:focus { border-color: var(--accent); }
+.login-input::placeholder { color: var(--muted); }
+
+.login-error {
+  color: var(--red);
+  font-size: 13px;
+  margin-bottom: 12px;
+  display: none;
+}
+
+.login-btn {
+  width: 100%;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 11px;
+  border-radius: var(--radius);
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity .15s;
+  margin-top: 4px;
+}
+
+.login-btn:hover { opacity: .88; }
+.login-btn:disabled { opacity: .45; cursor: not-allowed; }
