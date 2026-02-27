@@ -192,9 +192,17 @@ class MCPAgent:
 
         yield {"type": "error", "message": "Se alcanzó el límite máximo de turnos."}
 
+    def connected_servers(self) -> list[str]:
+        """Devuelve los nombres de los servidores MCP conectados exitosamente."""
+        return list(self._sessions.keys())
+
     def load_history(self, history: list):
-        """Carga historial desde formato JSON (dicts compatibles con la API de Anthropic)."""
-        self._history = history
+        """
+        Carga historial desde formato JSON.
+        Sanitiza cada bloque de contenido para eliminar campos que la API no acepta
+        (ej: parsed_output guardado por versiones anteriores con model_dump()).
+        """
+        self._history = _sanitize_history(history)
 
     def clear_history(self):
         """Borra el historial de la conversación (para el comando /limpiar)."""
@@ -227,6 +235,37 @@ class MCPAgent:
     async def cleanup(self):
         """Cierra todas las sesiones MCP y libera recursos."""
         await self._exit_stack.aclose()
+
+
+def _sanitize_history(history: list) -> list:
+    """
+    Limpia el historial cargado desde disco eliminando campos extra en los bloques
+    de contenido del asistente (ej: parsed_output de versiones antiguas con model_dump()).
+    """
+    clean = []
+    for msg in history:
+        content = msg.get("content")
+        if isinstance(content, list):
+            clean_blocks = []
+            for block in content:
+                if not isinstance(block, dict):
+                    clean_blocks.append(block)
+                    continue
+                t = block.get("type")
+                if t == "text":
+                    clean_blocks.append({"type": "text", "text": block.get("text", "")})
+                elif t == "tool_use":
+                    clean_blocks.append({"type": "tool_use", "id": block["id"],
+                                         "name": block["name"], "input": block["input"]})
+                elif t == "tool_result":
+                    # bloques de resultado del usuario, mantener tal cual
+                    clean_blocks.append(block)
+                else:
+                    clean_blocks.append({"type": t})
+            clean.append({**msg, "content": clean_blocks})
+        else:
+            clean.append(msg)
+    return clean
 
 
 def _serialize_block(block) -> dict:

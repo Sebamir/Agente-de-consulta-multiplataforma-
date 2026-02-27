@@ -29,17 +29,20 @@ def build_mcp_servers() -> dict:
     """
     Construye la configuración de servidores MCP activos.
 
-    - PostgreSQL: siempre activo (requiere DATABASE_URL).
+    - PostgreSQL:    activo solo si DATABASE_URL está definida.
     - Google Sheets: activo solo si GOOGLE_CREDENTIALS_PATH apunta a un archivo existente.
+
+    Si ninguno está configurado, el agente arranca igual pero sin herramientas de datos.
     """
     src_dir = os.path.dirname(__file__)
+    servers = {}
 
-    servers = {
-        "postgres": {
+    database_url = os.environ.get("DATABASE_URL", "")
+    if database_url:
+        servers["postgres"] = {
             "command": sys.executable,
-            "args": [os.path.join(src_dir, "pg_server.py"), get_database_url()],
+            "args": [os.path.join(src_dir, "pg_server.py"), database_url],
         }
-    }
 
     credentials_path = os.environ.get("GOOGLE_CREDENTIALS_PATH", "")
     if credentials_path and os.path.isfile(credentials_path):
@@ -53,9 +56,10 @@ def build_mcp_servers() -> dict:
 
 # System prompt que define el comportamiento del agente
 SYSTEM_PROMPT = """Sos un asistente experto en consulta y análisis de datos multiplataforma.
-Tenés acceso a una base de datos PostgreSQL y a Google Sheets.
+Podés tener acceso a una base de datos PostgreSQL y/o a Google Sheets, según la configuración activa.
+Usá solo las herramientas que estén disponibles en la sesión actual.
 
-Herramientas disponibles:
+Herramientas posibles (disponibles solo si están configuradas):
 
 [PostgreSQL]
 - query:   ejecutar consultas SELECT
@@ -82,5 +86,6 @@ Reglas importantes:
 3. Si una consulta puede ser ambigua, pedí clarificación antes de ejecutarla.
 4. Si detectás un error en los datos, informalo antes de continuar.
 5. Cuando respondas con tablas de datos, usá formato legible.
+6. Si el usuario pide algo que requiere una fuente de datos no configurada, informalo claramente.
 
 Respondé siempre en español."""

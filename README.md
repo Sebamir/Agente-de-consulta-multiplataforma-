@@ -24,7 +24,42 @@ Agente de IA conversacional que se conecta a **PostgreSQL** y **Google Sheets** 
 - **Lenguaje:** Python 3.11+
 - **CLI:** `rich` para formato y colores
 
-## Instalación rápida
+## Instalación
+
+### Opción A — Docker (recomendado para producción)
+
+**Prerrequisito:** [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+
+```bash
+# 1. Clonar el repositorio
+git clone <url-del-repo>
+cd agente-de-consulta
+
+# 2. Configurar variables de entorno
+cp .env.example .env
+# Editar .env con ANTHROPIC_API_KEY, WEB_USERS, JWT_SECRET
+# y opcionalmente DATABASE_URL y GOOGLE_CREDENTIALS_PATH
+
+# 3. Iniciar
+deploy\start.bat        # Windows
+# o: docker compose up -d --build
+```
+
+El contenedor arranca automáticamente con Windows gracias a `restart: always`.
+
+**Scripts disponibles en `deploy/`:**
+
+| Script | Acción |
+|--------|--------|
+| `start.bat` | Construye la imagen y arranca el contenedor |
+| `stop.bat` | Detiene el contenedor |
+| `logs.bat` | Muestra los logs en tiempo real |
+| `update.bat` | `git pull` + reconstruye + reinicia |
+
+> **Nota Docker + DB local:** si `DATABASE_URL` apunta a `localhost`, reemplazarlo por
+> `host.docker.internal` (Windows/Mac) o la IP de la red (`192.168.x.x`).
+
+### Opción B — Python directo (desarrollo / CLI)
 
 **Prerrequisitos:** Python 3.11+  _(Node.js no requerido)_
 
@@ -38,13 +73,12 @@ python -m venv venv
 venv\Scripts\activate          # Windows
 # source venv/bin/activate     # macOS / Linux
 
-# 3. Instalar dependencias Python
+# 3. Instalar dependencias
 pip install -r requirements.txt
 
 # 4. Configurar variables de entorno
 cp .env.example .env
-# Editar .env con ANTHROPIC_API_KEY, DATABASE_URL, WEB_USERS, JWT_SECRET
-# y opcionalmente GOOGLE_CREDENTIALS_PATH
+# Editar .env con las credenciales necesarias
 
 # 5. Ejecutar
 python main.py
@@ -52,7 +86,7 @@ python main.py
 
 ## Configuración de Google Sheets (opcional)
 
-Si no se configura, el agente arranca igual pero solo con acceso a PostgreSQL.
+Si no se configura, el agente arranca igual sin las herramientas de Sheets.
 
 1. Ir a [console.cloud.google.com](https://console.cloud.google.com) → crear un proyecto
 2. Habilitar **Google Sheets API** y **Google Drive API**
@@ -116,7 +150,7 @@ agente-de-consulta/
 │   ├── agent.py          # MCPAgent — loop agentivo, run_query, stream_query
 │   ├── auth.py           # Autenticación JWT — usuarios, tokens, verificación
 │   ├── cli.py            # Interfaz de usuario (Rich CLI)
-│   ├── config.py         # Configuración: MCPs, system prompt, env vars
+│   ├── config.py         # Configuración: MCPs (opcionales), system prompt, env vars
 │   ├── pg_server.py      # Servidor MCP PostgreSQL (query + execute)
 │   ├── sheets_server.py  # Servidor MCP Google Sheets (5 herramientas)
 │   └── web.py            # API FastAPI + auth + sesiones + endpoints SSE
@@ -125,10 +159,18 @@ agente-de-consulta/
 │   ├── login.html        # Página de login
 │   ├── app.js            # Cliente SSE, streaming, rendering, auth
 │   └── style.css         # Estilos del chat y login
+├── deploy/
+│   ├── start.bat         # docker compose up -d --build
+│   ├── stop.bat          # docker compose down
+│   ├── logs.bat          # docker compose logs -f
+│   └── update.bat        # git pull + rebuild + restart
 ├── sessions/             # Historiales por usuario (generado en runtime, no commitear)
 │   └── {username}/
 │       └── history.json
 ├── credentials/          # Credenciales Google (no commitear)
+├── Dockerfile            # Imagen Python 3.11-slim
+├── docker-compose.yml    # Puertos, volúmenes, restart always
+├── .dockerignore
 ├── main.py               # Punto de entrada — CLI o --web
 ├── test_concurrency.py   # Test de sesiones simultáneas
 ├── .env                  # Variables de entorno (no commitear)
@@ -145,11 +187,13 @@ Copiá `.env.example` como `.env` y completá los valores:
 
 ```env
 ANTHROPIC_API_KEY=sk-ant-...
-DATABASE_URL=postgresql://usuario:contraseña@localhost:5432/nombre_db
 
 # Autenticación web
 WEB_USERS=admin:mi-contraseña,usuario2:otra-clave
 JWT_SECRET=clave-aleatoria-de-al-menos-32-caracteres
+
+# PostgreSQL (opcional — si no está, el agente arranca sin herramientas de DB)
+DATABASE_URL=postgresql://usuario:contraseña@localhost:5432/nombre_db
 
 # Google Sheets (opcional)
 GOOGLE_CREDENTIALS_PATH=./credentials/google-service-account.json
@@ -194,6 +238,8 @@ python -c "import secrets; print(secrets.token_hex(32))"
 - [x] Streaming token a token con acordeón de tool calls
 - [x] Autenticación JWT con usuarios definidos en `.env`
 - [x] Historial persistente por usuario (sobrevive reinicios)
+- [x] Deploy con Docker — imagen portable, restart automático, scripts en `deploy/`
+- [x] Fuentes de datos opcionales — el agente arranca sin DB si `DATABASE_URL` no está definida
 - [ ] Panel de administración de conexiones / sesiones activas
 
 ---

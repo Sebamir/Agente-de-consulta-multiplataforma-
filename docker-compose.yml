@@ -1,0 +1,11 @@
+services:
+  agente:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./sessions:/app/sessions        # historial de conversaciones (persistente)
+      - ./credentials:/app/credentials  # credenciales Google (opcional)
+    restart: always                     # arranca automático cuando Docker inicia con Windows

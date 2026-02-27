@@ -26,19 +26,7 @@
       </div>
     </header>
 
-    <main class="messages" id="messages">
-      <div class="message assistant">
-        <div class="bubble">
-          Hola, soy tu agente de datos. Podés preguntarme sobre tus tablas de PostgreSQL
-          o tus Google Sheets en lenguaje natural.<br><br>
-          <strong>Ejemplos:</strong><br>
-          • Listá todas las tablas disponibles<br>
-          • Mostrá los últimos 10 registros de [tabla]<br>
-          • ¿Qué spreadsheets tengo disponibles?<br>
-          • Resumí las ventas por categoría
-        </div>
-      </div>
-    </main>
+    <main class="messages" id="messages"></main>
 
     <footer class="input-area">
       <textarea
@@ -59,5 +47,6 @@
   </div>
 
   <script src="/static/app.js"></script>
+  <script>loadServices();</script>
 </body>
 </html>

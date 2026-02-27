@@ -50,7 +50,7 @@ clearBtn.addEventListener("click", async () => {
     headers: { "Authorization": `Bearer ${AUTH_TOKEN}` },
   });
   messagesEl.innerHTML = "";
-  appendAssistantWelcome();
+  appendAssistantWelcome(_cachedServices);
 });
 
 /* ── Agregar mensaje del usuario ──────────────────────────────────────────── */
@@ -222,12 +222,48 @@ function escapeHtml(str) {
     .replace(/"/g, "&quot;");
 }
 
-function appendAssistantWelcome() {
+/* ── Cargar servicios conectados al iniciar ────────────────────────────────── */
+let _cachedServices = { configured: [], connected: [] };
+
+async function loadServices() {
+  try {
+    const res = await fetch("/api/services", {
+      headers: { "Authorization": `Bearer ${AUTH_TOKEN}` },
+    });
+    if (res.status === 401) {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_username");
+      window.location.replace("/login");
+      return;
+    }
+    if (res.ok) {
+      _cachedServices = await res.json();
+    }
+  } catch (_) {
+    // Si falla, mostramos bienvenida sin info de servicios
+  }
+  appendAssistantWelcome(_cachedServices);
+}
+
+function appendAssistantWelcome(serviceInfo = { configured: [], connected: [] }) {
+  const SERVICE_LABELS = { postgres: "PostgreSQL", sheets: "Google Sheets" };
+  const ALL_SERVICES   = ["postgres", "sheets"];
+
+  const serviceLines = ALL_SERVICES.map(key => {
+    const label = SERVICE_LABELS[key];
+    const isConnected  = serviceInfo.connected?.includes(key);
+    const isConfigured = serviceInfo.configured?.includes(key);
+    if (isConnected)  return `<span class="svc-ok">✓ ${label}</span>`;
+    if (isConfigured) return `<span class="svc-warn">✗ ${label} (error de conexión)</span>`;
+    return `<span class="svc-off">— ${label} (no configurado)</span>`;
+  }).join("  ");
+
   messagesEl.innerHTML = `
     <div class="message assistant">
       <div class="bubble">
-        Hola, soy tu agente de datos. Podés preguntarme sobre tus tablas de PostgreSQL
-        o tus Google Sheets en lenguaje natural.<br><br>
+        Hola, soy tu agente de datos. Podés preguntarme sobre tus fuentes de datos
+        en lenguaje natural.<br><br>
+        <strong>Servicios:</strong> ${serviceLines}<br><br>
         <strong>Ejemplos:</strong><br>
         • Listá todas las tablas disponibles<br>
         • Mostrá los últimos 10 registros de [tabla]<br>

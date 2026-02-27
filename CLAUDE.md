@@ -30,7 +30,7 @@ agente-de-consulta/
 │   ├── agent.py          # MCPAgent — loop agentivo, run_query, stream_query
 │   ├── auth.py           # JWT — authenticate_user, create_token, verify_token
 │   ├── cli.py            # Interfaz de usuario (Rich CLI)
-│   ├── config.py         # Configuración: MCPs, system prompt, env vars
+│   ├── config.py         # Configuración: MCPs opcionales, system prompt, env vars
 │   ├── pg_server.py      # Servidor MCP PostgreSQL (query + execute)
 │   ├── sheets_server.py  # Servidor MCP Google Sheets (5 herramientas)
 │   └── web.py            # App FastAPI — auth, sesiones, endpoints SSE, static files
@@ -39,10 +39,18 @@ agente-de-consulta/
 │   ├── login.html        # Página de login
 │   ├── app.js            # Cliente SSE, streaming, rendering, JWT en localStorage
 │   └── style.css         # Estilos del chat y login
+├── deploy/
+│   ├── start.bat         # docker compose up -d --build
+│   ├── stop.bat          # docker compose down
+│   ├── logs.bat          # docker compose logs -f
+│   └── update.bat        # git pull + rebuild + restart
 ├── sessions/             # Historiales por usuario (runtime, ignorado en git)
 │   └── {username}/
 │       └── history.json
 ├── credentials/          # Credenciales Google (no commitear)
+├── Dockerfile            # Imagen Python 3.11-slim para producción
+├── docker-compose.yml    # Puertos, volúmenes, restart always
+├── .dockerignore
 ├── main.py               # Punto de entrada — python main.py / --web
 ├── test_concurrency.py   # Test de sesiones simultáneas
 ├── .env                  # Variables de entorno (no commitear)
@@ -126,9 +134,9 @@ agente-de-consulta/
 | Variable | Descripción | Requerida |
 |----------|-------------|-----------|
 | `ANTHROPIC_API_KEY` | API key de Anthropic | Sí |
-| `DATABASE_URL` | Connection string de PostgreSQL | Sí |
 | `WEB_USERS` | Usuarios web: `user1:pass1,user2:pass2` | Sí (modo web) |
 | `JWT_SECRET` | Clave para firmar tokens JWT (mín. 32 chars) | Sí (modo web) |
+| `DATABASE_URL` | Connection string de PostgreSQL | No (agente arranca sin DB) |
 | `GOOGLE_CREDENTIALS_PATH` | Ruta al JSON de la cuenta de servicio Google | No |
 
 ## Comandos de desarrollo
@@ -156,6 +164,25 @@ python src/agent.py
 python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
+## Comandos Docker (producción)
+
+```bash
+# Iniciar (construye imagen si no existe)
+docker compose up -d --build
+
+# Ver estado
+docker compose ps
+
+# Ver logs en tiempo real
+docker compose logs -f
+
+# Detener
+docker compose down
+
+# Actualizar (git pull + rebuild)
+deploy\update.bat
+```
+
 ## Fases del proyecto
 
 Ver `README.md` para el roadmap completo.
@@ -165,4 +192,4 @@ Ver `README.md` para el roadmap completo.
 - **Fase 3 ✅** Google Sheets MCP (lectura, escritura, append, descubrimiento)
 - **Fase 4** Exportación de resultados + extended thinking
 - **Fase 5 ✅** Interfaz web FastAPI con streaming SSE, sesiones multi-usuario,
-  autenticación JWT e historial persistente por usuario
+  autenticación JWT, historial persistente por usuario y deploy Docker con scripts en `deploy/`

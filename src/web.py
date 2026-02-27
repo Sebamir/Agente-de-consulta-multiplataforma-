@@ -18,6 +18,7 @@ from pydantic import BaseModel
 
 from agent import MCPAgent
 from auth import authenticate_user, create_token, verify_token
+from config import build_mcp_servers
 
 # Directorios
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
@@ -176,3 +177,15 @@ async def session_status(username: str = Depends(get_current_user)):
         return {"active": False, "history_length": 0}
     agent = _sessions[username]
     return {"active": True, "history_length": len(agent._history)}
+
+
+@app.get("/api/services")
+async def services(username: str = Depends(get_current_user)):
+    """
+    Devuelve qué servicios están configurados y cuáles conectados exitosamente.
+    Crea la sesión si aún no existe (dispara la conexión a los MCPs).
+    """
+    agent = await get_or_create_session(username)
+    configured = list(build_mcp_servers().keys())
+    connected  = agent.connected_servers()
+    return {"configured": configured, "connected": connected}
